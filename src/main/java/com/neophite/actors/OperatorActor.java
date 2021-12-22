@@ -6,12 +6,11 @@ import java.time.Duration;
 import java.util.LinkedList;
 
 public class OperatorActor extends AbstractActor {
-    private ActorRef currentVisitor;
     private String name;
     private LinkedList<ActorRef> visitorsQueue;
     private ActorRef onlineVisitor;
 
-    public OperatorActor(String name , ActorSystem actorSystem) {
+    public OperatorActor(String name) {
         this.name = name;
         this.visitorsQueue = new LinkedList<>();
 
@@ -36,10 +35,12 @@ public class OperatorActor extends AbstractActor {
 
     private void onSucessfullDisconnectionAction(){
         System.out.println("OPERATOR : " + name + " is free");
+        onlineVisitor = null;
     }
 
     private void onVisitorRequestToConnect(){
         if(onlineVisitor==null){
+            onlineVisitor = getSender();
             getSender().tell(OperatorCommands.CONNECT_USER,getSelf());
         }else {
             getSender().tell(OperatorCommands.WAIT_FOR_CONNECT , getSelf());
@@ -48,7 +49,7 @@ public class OperatorActor extends AbstractActor {
 
     private void onConnectedToOperatorProcces(){
         getContext().system().scheduler().scheduleOnce(Duration.ofMillis(5000),
-                currentVisitor, OperatorCommands.SUCCESFULL_DIALOG_ENDED, getContext().system().dispatcher(), getSelf());
+                getSender(), OperatorCommands.SUCCESFULL_DIALOG_ENDED, getContext().dispatcher(), getSelf());
     }
 
     public enum OperatorCommands{

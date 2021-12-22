@@ -5,6 +5,7 @@ import akka.actor.ActorRef;
 import akka.actor.Props;
 import com.neophite.RandomHelper;
 
+import java.time.Duration;
 import java.util.LinkedList;
 import java.util.Random;
 
@@ -24,10 +25,11 @@ public class VisitorActor extends AbstractActor {
         operatorIndex = RandomHelper.getRandomNumber(operators.size());
         var randomOperator = operators.get(operatorIndex);
         randomOperator.tell(VisitorCommands.CAN_I_CONNECT,getSelf());
+        System.out.println("VISITOR  : " + name + " TRY CONNECT TO  : " + operatorIndex);
     }
 
-    public static Props props(String name) {
-        return Props.create(VisitorActor.class,name);
+    public static Props props(LinkedList<ActorRef> operators,String name) {
+        return Props.create(VisitorActor.class,operators,name);
     }
 
     @Override
@@ -36,13 +38,22 @@ public class VisitorActor extends AbstractActor {
             connectToOperator();
         }).matchEquals(OperatorActor.OperatorCommands.SUCCESFULL_DIALOG_ENDED, callback -> {
             onSucessfullDialogEnded();
-        }).build();
+        }).matchEquals(OperatorActor.OperatorCommands.WAIT_FOR_CONNECT , callback -> {
+            onConnectionWaitingAction();
+        }).
+                build();
+    }
+
+    private void onConnectionWaitingAction(){
+        getContext().system().scheduler().scheduleOnce(Duration.ofMillis(5000),
+                getSender(), VisitorCommands.CAN_I_CONNECT , getContext().system().dispatcher(), getSelf());
     }
 
     private void connectToOperator()
     {
+        System.out.println("VISITOR : " + name + " CONNECTED TO : " + operatorIndex );
         currentOperator = getSender();
-        currentOperator.tell(VisitorCommands.CONNECT_TO_OPERATOR,getSelf());
+        getSender().tell(VisitorCommands.CONNECT_TO_OPERATOR,getSelf());
     }
 
     private void onSucessfullDialogEnded(){

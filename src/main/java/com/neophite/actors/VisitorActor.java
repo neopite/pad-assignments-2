@@ -45,8 +45,13 @@ public class VisitorActor extends AbstractActor {
     }
 
     private void onConnectionWaitingAction(){
-        getContext().system().scheduler().scheduleOnce(Duration.ofMillis(5000),
-                getSender(), VisitorCommands.CAN_I_CONNECT , getContext().system().dispatcher(), getSelf());
+        var chance = Math.random();
+        if(chance>0.8){
+            System.out.println("VISITOR : " + name + " FAILED");
+        }else {
+            getContext().system().scheduler().scheduleOnce(Duration.ofMillis(5000),
+                    getSender(), VisitorCommands.CAN_I_CONNECT, getContext().system().dispatcher(), getSelf());
+        }
     }
 
     private void connectToOperator()
